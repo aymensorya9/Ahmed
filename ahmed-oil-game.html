@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أحمد والنفط | اللعبة الرسمية</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;color:#fff;background:linear-gradient(145deg,#10121b,#20202b,#10121b);min-height:100vh}
+header{text-align:center;padding:25px 12px;background:linear-gradient(90deg,#6b3900,#d79a20,#6b3900);color:#fff8df;border-bottom:3px solid #ffda73}
+header h1{margin:0;font-size:32px}header p{margin:10px 0 0}
+.container{max-width:900px;margin:auto;padding:16px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0 20px}
+.stat,.panel{background:#222432;border:1px solid #414454;border-radius:16px;padding:16px;text-align:center}
+.stat strong{display:block;font-size:25px;color:#ffd45c;margin-top:8px}
+.arena{position:relative;overflow:hidden;text-align:center;border-radius:22px;padding:20px 10px 25px;min-height:300px;background:radial-gradient(ellipse at center,#45414a,#151722 75%);border:2px solid #8b6b32}
+.level{color:#ffdc73;font-weight:bold;font-size:18px}
+.character{font-size:100px;display:inline-block;margin:12px auto;transition:transform .2s;filter:drop-shadow(0 8px 5px #0008)}
+.character.hit{animation:hit .35s}.character.dodge{animation:dodge .45s}
+@keyframes hit{0%{transform:rotate(0) scale(1)}30%{transform:rotate(-18deg) scale(.8)}65%{transform:rotate(15deg) scale(1.1)}100%{transform:rotate(0) scale(1)}}
+@keyframes dodge{0%{transform:translateX(0)}40%{transform:translateX(100px) rotate(15deg)}100%{transform:translateX(0)}}
+#oilArea{position:absolute;inset:0;pointer-events:none}
+.drop{position:absolute;font-size:24px;animation:fly 1s ease-out forwards}
+@keyframes fly{0%{transform:translate(0,0) scale(.5);opacity:1}100%{transform:translate(var(--x),var(--y)) scale(1.3);opacity:0}}
+.message{min-height:28px;color:#ffdc73;font-weight:bold;margin:8px 0}
+button{border:0;border-radius:12px;padding:13px 18px;font-weight:bold;font-size:15px;cursor:pointer;transition:.15s;margin:4px}
+button:active{transform:scale(.95)}
+.hitbtn{background:#e4a62d;color:#211500}.dodgebtn{background:#4087ee;color:white}.buybtn{background:#303748;color:white;border:1px solid #636b7c}
+button:disabled{opacity:.4;cursor:not-allowed}
+.progress{background:#11131b;height:12px;border-radius:20px;overflow:hidden;margin:12px 0}
+#bar{height:100%;width:0;background:linear-gradient(90deg,#e49b16,#ffe38a);transition:width .3s}
+.section-title{color:#ffda73;margin:25px 0 12px}
+.skins{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.skin{background:#222432;border:1px solid #414454;border-radius:15px;padding:14px;text-align:center}
+.skin .face{font-size:42px;margin:6px}.skin p{color:#c6c8d4}.skin.active{border:2px solid #f6c84d}.skin button{width:100%}
+.log{max-height:120px;overflow:auto;color:#c9cbd7;font-size:13px;text-align:right}
+footer{text-align:center;color:#8f93a5;padding:25px}
+@media(max-width:450px){header h1{font-size:25px}.stat{padding:12px 4px;font-size:13px}.stat strong{font-size:21px}.skins{grid-template-columns:1fr 1fr}button{padding:12px 10px}}
+</style>
+</head>
+<body>
+<header><h1>🛢️ أحمد والنفط</h1><p>اضرب، اجمع النفط، افتح السكنات وارتقِ باللفلات!</p></header>
+<div class="container">
+<div class="stats">
+<div class="stat">💰 النقاط<strong id="points">0</strong></div>
+<div class="stat">🛢️ النفط<strong id="oil">0</strong></div>
+<div class="stat">🏆 المستوى<strong id="level">1</strong></div>
+</div>
+<div class="panel"><div class="level" id="levelName">المستوى الأول: المبتدئ</div><div class="progress"><div id="bar"></div></div><div id="progressText">0 / 100 نقطة للمستوى التالي</div></div>
+<div class="arena" id="arena">
+<div id="oilArea"></div><div style="color:#d7d8e0">الخصم: أحمد</div>
+<div class="character" id="ahmed">🧍🏻‍♂️</div>
+<div style="font-size:18px;font-weight:bold">أحمد الإنسان الطبيعي 😎</div>
+<div class="message" id="message">مستعد للتحدي؟ اختر حركتك!</div>
+<button class="hitbtn" onclick="hit()">👊 اضرب أحمد (+25)</button>
+<button class="dodgebtn" onclick="dodge()">🏃 راوِغ أحمد</button>
+</div>
+<h2 class="section-title">👕 متجر السكنات</h2><p style="color:#bfc2cf">اشترِ مظهرك المفضل باستخدام نقاطك.</p>
+<div class="skins" id="skins"></div>
+<h2 class="section-title">📜 سجل المعركة</h2><div class="panel log" id="log">بدأت اللعبة! بالتوفيق يا بطل 🔥</div>
+</div>
+<footer>أحمد والنفط © 2026 | لعبة ترفيهية خيالية</footer>
+<script>
+let points=0,oil=0,level=1,busy=false;
+const levelNames=["المبتدئ","جامع النفط","محترف الضربات","أسطورة النفط","ملك الصحراء","إمبراطور النفط","الزعيم الأسطوري"];
+const skins=[
+{name:"أحمد العادي",face:"🧍🏻‍♂️",price:0},
+{name:"أحمد الذهبي",face:"👑",price:100},
+{name:"أحمد الناري",face:"🥷",price:200},
+{name:"أحمد الملك",face:"🤴",price:350},
+{name:"أحمد الفضائي",face:"👽",price:500},
+{name:"أحمد الأسطوري",face:"🦸🏻‍♂️",price:800}
+];
+let owned=[0],selected=0;
+function update(){
+document.getElementById("points").textContent=points;
+document.getElementById("oil").textContent=oil;
+document.getElementById("level").textContent=level;
+const next=level*100,current=points%next;
+document.getElementById("bar").style.width=Math.min(100,current/next*100)+"%";
+document.getElementById("progressText").textContent=current+" / "+next+" نقطة للمستوى التالي";
+document.getElementById("levelName").textContent="المستوى "+level+": "+levelNames[Math.min(level-1,6)];
+renderSkins();
+}
+function addLog(text){const log=document.getElementById("log"),line=document.createElement("div");line.textContent="• "+text;log.prepend(line)}
+function checkLevel(){const newLevel=Math.floor(points/100)+1;if(newLevel>level){level=newLevel;document.getElementById("message").textContent="🎉 مبروك! وصلت للمستوى "+level+"!";addLog("ارتقيت إلى المستوى "+level+"!")}}
+function splash(){
+const area=document.getElementById("oilArea");
+for(let i=0;i<12;i++){const drop=document.createElement("span");drop.className="drop";drop.textContent=Math.random()>.5?"🛢️":"💧";drop.style.left=(35+Math.random()*30)+"%";drop.style.top=(40+Math.random()*20)+"%";drop.style.setProperty("--x",(Math.random()*300-150)+"px");drop.style.setProperty("--y",(Math.random()*180-90)+"px");area.appendChild(drop);setTimeout(()=>drop.remove(),1000)}
+}
+function animate(type){const el=document.getElementById("ahmed");el.classList.remove("hit","dodge");void el.offsetWidth;el.classList.add(type);setTimeout(()=>el.classList.remove(type),500)}
+function hit(){if(busy)return;busy=true;points+=25;oil+=1;checkLevel();animate("hit");splash();document.getElementById("message").textContent="🛢️ طلع النفط من أحمد! +25 نقطة";addLog("ضربت أحمد وربحت 25 نقطة وبرميل نفط.");update();setTimeout(()=>busy=false,350)}
+function dodge(){if(busy)return;busy=true;animate("dodge");const success=Math.random()<0.5;if(success){points+=10;document.getElementById("message").textContent="⚡ مراوغة ناجحة! +10 نقاط";addLog("نجحت بالمراوغة وربحت 10 نقاط.")}else{points=Math.max(0,points-20);document.getElementById("message").textContent="💥 أحمد مسكك! خسرت 20 نقطة.";addLog("فشلت بالمراوغة وخسرت 20 نقطة.")}checkLevel();update();setTimeout(()=>busy=false,450)}
+function renderSkins(){
+const box=document.getElementById("skins");box.innerHTML="";
+skins.forEach((s,i)=>{const card=document.createElement("div");card.className="skin"+(selected===i?" active":"");
+const face=document.createElement("div");face.className="face";face.textContent=s.face;
+const name=document.createElement("strong");name.textContent=s.name;
+const desc=document.createElement("p");desc.textContent=s.price===0?"مجاني":"السعر: "+s.price+" نقطة";
+const btn=document.createElement("button");btn.className="buybtn";
+if(owned.includes(i)){btn.textContent=selected===i?"✅ مجهز":"تجهيز السكن";btn.onclick=()=>equip(i)}
+else{btn.textContent="🪙 شراء";btn.disabled=points<s.price;btn.onclick=()=>buy(i)}
+card.append(face,name,desc,btn);box.appendChild(card)})
+}
+function buy(i){if(owned.includes(i)||points<skins[i].price)return;points-=skins[i].price;owned.push(i);selected=i;document.getElementById("ahmed").textContent=skins[i].face;document.getElementById("message").textContent="🎉 اشتريت "+skins[i].name+"!";addLog("اشتريت سكن "+skins[i].name+".");update()}
+function equip(i){selected=i;document.getElementById("ahmed").textContent=skins[i].face;document.getElementById("message").textContent="✨ تم تجهيز "+skins[i].name;update()}
+update();
+</script>
+</body>
+</html>
